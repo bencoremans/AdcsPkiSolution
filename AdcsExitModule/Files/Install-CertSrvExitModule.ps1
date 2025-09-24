@@ -27,11 +27,11 @@ $ExpectedRuntimeVersion = 'v4.0.30319'
 # Definieer GUID's en naamstrings als variabelen
 $exitGuid = '{34EBA06C-24E0-4068-A049-262E871A6D7B}' # GUID voor Exit
 $exitManageGuid = '{434350AA-7CDF-4C78-9973-8F51BF320365}' # GUID voor ExitManage
-$assemblyName = 'ADCS.CertMod' # AssemblyName
-$exitClassName = 'ADCS.CertMod.Exit' # Class-naam voor Exit
-$exitManageClassName = 'ADCS.CertMod.ExitManage' # Class-naam voor ExitManage
-$exitProgId = 'AdcsCertMod.Exit' # ProgId voor Exit
-$exitManageProgId = 'AdcsCertMod.ExitManage' # ProgId voor ExitManage
+$assemblyName = 'AdcsExitModule' # AssemblyName
+$exitClassName = 'AdcsExitModule.Exit' # Class-naam voor Exit
+$exitManageClassName = 'ADCSAdcsExitModule.ExitManage' # Class-naam voor ExitManage
+$exitProgId = 'AdcsExitModule.Exit' # ProgId voor Exit
+$exitManageProgId = 'AdcsExitModule.ExitManage' # ProgId voor ExitManage
 $ExpectedFileName = "$assemblyName.dll" # Dynamisch gebaseerd op assemblyName
 
 # Functie om registry-configuratie uit te voeren

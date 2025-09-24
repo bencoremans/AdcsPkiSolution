@@ -62,10 +62,10 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Update="Uninstall-CertSrvExitModule.ps1">
+    <None Update="Files\Uninstall-CertSrvExitModule.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Install-CertSrvExitModule.ps1">
+    <None Update="Files\Install-CertSrvExitModule.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
