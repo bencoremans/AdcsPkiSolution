@@ -20,7 +20,7 @@ namespace ADCS.CertMod
 {
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    [ProgId("AdcsExitModule.Exit")]
+    [ProgId("AdcsCertMod.Exit")]
     [Guid("34eba06c-24e0-4068-a049-262e871a6d7b")]
     public class Exit : CertExitBase
     {
@@ -31,7 +31,7 @@ namespace ADCS.CertMod
         private readonly string _logFilePath;
         private string? _caName; // Store CA name from Initialize
         private static readonly Dictionary<string, string> TemplateNameCache = new(); // Cache for template names
-        private const string PROG_ID = "AdcsExitModule.Exit";
+        private const string PROG_ID = "AdcsCertMod.Exit";
 
         public Exit() : base(CreateInitialLogWriter())
         {

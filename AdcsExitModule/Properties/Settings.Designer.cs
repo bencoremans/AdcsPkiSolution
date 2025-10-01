@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AdcsExitModule.Properties {
+namespace ADCS.CertMod.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

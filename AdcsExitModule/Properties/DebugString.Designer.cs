@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AdcsExitModule.Properties {
+namespace ADCS.CertMod.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace AdcsExitModule.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AdcsExitModule.Properties.DebugString", typeof(DebugString).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ADCS.CertMod.Properties.DebugString", typeof(DebugString).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

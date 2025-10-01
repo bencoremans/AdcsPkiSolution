@@ -8,7 +8,7 @@ $VerbosePreference = 'Continue'
 # Definieer GUID's en naamstrings als variabelen
 $exitGuid = '{34EBA06C-24E0-4068-A049-262E871A6D7B}'          # GUID voor Exit (Exit.cs, [Guid] attribuut)
 $exitManageGuid = '{434350AA-7CDF-4C78-9973-8F51BF320365}'    # GUID voor ExitManage (ExitManage.cs, [Guid] attribuut)
-$assemblyName = 'ADCS.CertMod'                                 # AssemblyName (ADCSExitModule.csproj, <AssemblyName>)
+$assemblyName = 'AdcsExitModule'                                 # AssemblyName (ADCSExitModule.csproj, <AssemblyName>)
 $exitClassName = 'ADCS.CertMod.Exit'                           # Class-naam voor Exit (Exit.cs, namespace en class naam)
 $exitManageClassName = 'ADCS.CertMod.ExitManage'               # Class-naam voor ExitManage (ExitManage.cs, namespace en class naam)
 $exitProgId = 'AdcsCertMod.Exit'                               # ProgId voor Exit (Exit.cs, [ProgId] attribuut)

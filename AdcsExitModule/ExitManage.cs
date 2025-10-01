@@ -6,7 +6,7 @@ namespace ADCS.CertMod
 {
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    [ProgId("AdcsExitModule.ExitManage")]
+    [ProgId("AdcsCertMod.ExitManage")]
     [Guid("434350aa-7cdf-4c78-9973-8f51bf320365")]
     public class ExitManage : ICertManageModule
     {
@@ -30,9 +30,9 @@ namespace ADCS.CertMod
                 case "copyright":
                     return "Copyright (c) 2025, Justitiele ICT Organisatie";
                 case "file version":
-                    return "0.2";
+                    return "0.1";
                 case "product version":
-                    return "0.2.1";
+                    return "0.1.1";
                 default:
                     _logWriter?.LogWarning("Unknown property requested: {0}", strPropertyName);
                     return $"Unknown Property: {strPropertyName}";
