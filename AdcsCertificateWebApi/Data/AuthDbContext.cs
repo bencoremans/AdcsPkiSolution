@@ -5,7 +5,7 @@ namespace AdcsCertificateApi
     public class CertificateLog
     {
         public long CertificateID { get; set; }  // NOT NULL, PK
-        public string CAID { get; set; }  // NOT NULL
+        public string AdcsServerName { get; set; }  // NOT NULL
         public string SerialNumber { get; set; }  // NOT NULL
         public long Request_RequestID { get; set; }  // NOT NULL
         public long Disposition { get; set; }  // NOT NULL
@@ -47,7 +47,7 @@ namespace AdcsCertificateApi
 
     public class CA
     {
-        public string CAID { get; set; }
+        public string AdcsServerName { get; set; }
         public string IssuerName { get; set; }
         public string? Description { get; set; }
     }
@@ -71,7 +71,9 @@ namespace AdcsCertificateApi
     public class AuthorizedServer
     {
         public long ServerID { get; set; }
-        public string RequesterName { get; set; }
+        public string AdcsServerAccount { get; set; } 
+        public string AdcsServerName { get; set; }
+        public string ServerGUID { get; set; }  // New field, NOT NULL
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; }
@@ -97,14 +99,14 @@ namespace AdcsCertificateApi
 
             // Optioneel: Configureer andere constraints
             modelBuilder.Entity<AuthorizedServer>()
-                .HasIndex(a => a.RequesterName)
+                .HasIndex(a => a.AdcsServerName)
                 .IsUnique();
 
             modelBuilder.Entity<CertificateLog>()
                 .HasKey(c => c.CertificateID);
 
             modelBuilder.Entity<CA>()
-                .HasKey(c => c.CAID);
+                .HasKey(c => c.AdcsServerName);
 
             modelBuilder.Entity<CertificateTemplate>()
                 .HasKey(t => t.TemplateID);

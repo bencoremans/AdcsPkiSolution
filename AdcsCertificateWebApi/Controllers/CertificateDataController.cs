@@ -29,7 +29,7 @@ namespace AdcsCertificateApi
             if (!isUpdate)
             {
                 // Full mapping for new records
-                target.CAID = source.CAID;
+                target.AdcsServerName = source.AdcsServerName;  // Renamed from AdcsServerName
                 target.SerialNumber = source.SerialNumber;
                 target.Request_RequestID = source.Request_RequestID;
                 target.Disposition = source.Disposition;
@@ -173,19 +173,19 @@ namespace AdcsCertificateApi
                     logger.LogInformation("New template added: {TemplateName} (OID: {TemplateOID})", template.TemplateName, template.TemplateOID);
                 }
 
-                // Check if CA exists
-                var ca = await dbContext.CAs.FirstOrDefaultAsync(c => c.CAID == certificateData.Data.CAID);
+                // Check if CA exists (updated to AdcsServerName)
+                var ca = await dbContext.CAs.FirstOrDefaultAsync(c => c.AdcsServerName == certificateData.Data.AdcsServerName);  // Renamed
                 if (ca == null)
                 {
-                    ca = new CA { CAID = certificateData.Data.CAID, IssuerName = certificateData.Data.IssuerName };
+                    ca = new CA { AdcsServerName = certificateData.Data.AdcsServerName, IssuerName = certificateData.Data.IssuerName };  // Renamed
                     dbContext.CAs.Add(ca);
                     await dbContext.SaveChangesAsync();
-                    logger.LogInformation("New CA added: {CAID}, IssuerName: {IssuerName}", ca.CAID, ca.IssuerName);
+                    logger.LogInformation("New CA added: {AdcsServerName}, IssuerName: {IssuerName}", ca.AdcsServerName, ca.IssuerName);
                 }
 
-                // Check if CertificateLog already exists (unique on CAID + SerialNumber)
+                // Check if CertificateLog already exists (unique on AdcsServerName + SerialNumber)
                 var existingLog = await dbContext.CertificateLogs
-                    .FirstOrDefaultAsync(l => l.CAID == certificateData.Data.CAID && l.SerialNumber == certificateData.Data.SerialNumber);
+                    .FirstOrDefaultAsync(l => l.AdcsServerName == certificateData.Data.AdcsServerName && l.SerialNumber == certificateData.Data.SerialNumber);
 
                 long certificateId;
                 if (existingLog == null)
@@ -204,7 +204,7 @@ namespace AdcsCertificateApi
                     if (existingLog.Disposition == certificateData.Data.Disposition)
                     {
                         logger.LogInformation("No changes detected for SerialNumber: {SerialNumber}. No update performed.", certificateData.Data.SerialNumber);
-                        return Conflict($"Certificate with SerialNumber {certificateData.Data.SerialNumber} and CAID {certificateData.Data.CAID} already exists with the same Disposition ({existingLog.Disposition}).");
+                        return Conflict($"Certificate with SerialNumber {certificateData.Data.SerialNumber} and AdcsServerName {certificateData.Data.AdcsServerName} already exists with the same Disposition ({existingLog.Disposition}).");
                     }
 
                     // Update existing record with specific fields

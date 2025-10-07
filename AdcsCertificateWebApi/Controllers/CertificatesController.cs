@@ -27,13 +27,13 @@ namespace AdcsCertificateApi
                 var expiring = await dbContext.CertificateLogs
                     .Where(c => c.NotAfter < DateTime.Now.AddDays(30) && c.Disposition == 20)
                     .ToListAsync();
-                logger.LogInformation("Expirerende certificaten opgehaald. Aantal: {Count}", expiring.Count);
+                logger.LogInformation("Expiring certificates retrieved. Count: {Count}", expiring.Count);
                 return Ok(expiring);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Fout bij ophalen van expirerende certificaten");
-                return StatusCode(500, $"Fout bij ophalen: {ex.Message}");
+                logger.LogError(ex, "Error retrieving expiring certificates");
+                return StatusCode(500, $"Error retrieving: {ex.Message}");
             }
         }
     }

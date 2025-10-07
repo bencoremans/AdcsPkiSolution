@@ -30,6 +30,7 @@ namespace ADCS.CertMod
         private readonly ExitAppConfig _appConfig;
         private readonly string _logFilePath;
         private string? _caName; // Store CA name from Initialize
+        private readonly string machineName;
         private static readonly Dictionary<string, string> TemplateNameCache = new(); // Cache for template names
         private const string PROG_ID = "AdcsCertMod.Exit";
 
@@ -131,6 +132,76 @@ namespace ADCS.CertMod
             return ExitEvents.None;
         }
 
+        /// Retrieves the Active Directory objectGUID for the current server using the machine name.
+        /// Returns The GUID as a string in "D" format, or an empty string if the query fails.
+        private string GetAdServerGuid()
+        {
+            try
+            {
+                // Retrieve the machine name
+                Logger.LogDebug("Retrieving machine name from Environment.MachineName");
+                string machineName = Environment.MachineName;
+                Logger.LogDebug("Retrieved machine name: {0}", machineName);
+
+                // Connect to LDAP RootDSE to get the domain's naming context
+                Logger.LogDebug("Connecting to LDAP://RootDSE");
+                using var rootDse = new DirectoryEntry("LDAP://RootDSE");
+                string defaultNamingContext = rootDse.Properties["defaultNamingContext"].Value?.ToString();
+                if (string.IsNullOrEmpty(defaultNamingContext))
+                {
+                    Logger.LogError("Failed to retrieve defaultNamingContext from RootDSE. Is the server domain-joined?");
+                    return string.Empty;
+                }
+                Logger.LogDebug("Retrieved defaultNamingContext: {0}", defaultNamingContext);
+
+                // Set up DirectorySearcher to find the computer object by name
+                Logger.LogDebug("Setting up DirectorySearcher with root: LDAP://{0}", defaultNamingContext);
+                using var searchRoot = new DirectoryEntry($"LDAP://{defaultNamingContext}");
+                using var searcher = new DirectorySearcher(searchRoot)
+                {
+                    Filter = $"(&(objectClass=computer)(name={machineName}))",
+                    PropertiesToLoad = { "objectGUID", "distinguishedName", "sAMAccountName", "dNSHostName" }
+                };
+                Logger.LogDebug("Search filter: {0}, Search root: {1}", searcher.Filter, searchRoot.Path);
+
+                // Execute the search
+                Logger.LogDebug("Executing DirectorySearcher.FindOne with name filter");
+                SearchResult result = searcher.FindOne();
+                if (result == null)
+                {
+                    Logger.LogError("Computer object not found for name: {0}", machineName);
+                    return string.Empty;
+                }
+
+                // Log the found attributes for debugging
+                string distinguishedName = result.Properties["distinguishedName"]?.Cast<string>().FirstOrDefault();
+                string foundSAMAccountName = result.Properties["sAMAccountName"]?.Cast<string>().FirstOrDefault();
+                string foundDNSHostName = result.Properties["dNSHostName"]?.Cast<string>().FirstOrDefault();
+                Logger.LogDebug("Found computer object with DN: {0}, sAMAccountName: {1}, dNSHostName: {2}",
+                    distinguishedName ?? "null", foundSAMAccountName ?? "null", foundDNSHostName ?? "null");
+
+                // Retrieve and convert the objectGUID
+                byte[] guidBytes = result.Properties["objectGUID"]?.Count > 0 ? result.Properties["objectGUID"][0] as byte[] : null;
+                if (guidBytes != null && guidBytes.Length == 16)
+                {
+                    Guid guid = new Guid(guidBytes);
+                    Logger.LogDebug("Retrieved AD Server GUID: {0}", guid.ToString("D"));
+                    return guid.ToString("D");
+                }
+                else
+                {
+                    Logger.LogError("Failed to retrieve valid objectGUID for name: {0}, DN: {1}", machineName, distinguishedName ?? "null");
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error retrieving AD Server GUID: {0}, StackTrace: {1}", ex.Message, ex.StackTrace);
+                return string.Empty;
+            }
+        }
+
+
         private string? GetTemplateNameFromAD(string? templateOID)
         {
             if (string.IsNullOrEmpty(templateOID))
@@ -204,6 +275,10 @@ namespace ADCS.CertMod
             if (Logger.LogLevel <= LogLevel.Debug) Logger.LogDebug("Exit::Notify called");
             Logger.LogInformation("Exit Notify called. Event: {0}, Context: {1}", exitEvent.ToString(), context);
 
+
+            // In the Notify method, before calling SendToApi, retrieve the GUID (add this line if needed, but mainly in SendToApi)
+            // ... (existing Notify method remains the same, except update SendToApi call)
+            // private void SendToApi(CertDbRow props, CertServerModule certServer, int context, ExitEvents exitEvent)
             CertDbRow? props = null;
             try
             {
@@ -264,6 +339,15 @@ namespace ADCS.CertMod
         private void SendToApi(CertDbRow props, CertServerModule certServer, int context, ExitEvents exitEvent)
         {
             if (Logger.LogLevel <= LogLevel.Debug) Logger.LogDebug("Exit::SendToApi called for Context: {0}, Event: {1}", context, exitEvent.ToString());
+
+            // Retrieve AD Server GUID and add to headers (new addition)
+            string serverGuid = GetAdServerGuid();
+            if (string.IsNullOrEmpty(serverGuid))
+            {
+                Logger.LogError("Failed to retrieve AD Server GUID for Context: {0}, buffering data", context);
+                BufferJson(new { Data = props, SANS = new List<object>(), SubjectAttributes = new List<object>() }, context, props);
+                return;
+            }
 
             // Map Request_Disposition to numeric value
             long? disposition = null;
@@ -401,7 +485,7 @@ namespace ADCS.CertMod
             {
                 data = new
                 {
-                    caId = Environment.MachineName.ToUpper(),
+                    adcsServerName = Environment.MachineName.ToUpper(),
                     issuerName = _caName ?? "Unknown CA",
                     serialNumber = props.ContainsKey("SerialNumber") ? props["SerialNumber"]?.ToString() : null,
                     request_RequestID = props.ContainsKey("Request_RequestID") ? TryParseLong(props["Request_RequestID"]) : null,
@@ -437,7 +521,7 @@ namespace ADCS.CertMod
 
             // Validate required fields
             var missingFields = new List<string>();
-            if (string.IsNullOrEmpty(payload.data.caId)) missingFields.Add("caId");
+            if (string.IsNullOrEmpty(payload.data.adcsServerName)) missingFields.Add("adcsServerName");  // Updated validation
             if (string.IsNullOrEmpty(payload.data.issuerName)) missingFields.Add("issuerName");
             if (string.IsNullOrEmpty(payload.data.serialNumber)) missingFields.Add("serialNumber");
             if (payload.data.request_RequestID == null) missingFields.Add("request_RequestID");
@@ -465,7 +549,7 @@ namespace ADCS.CertMod
                 return;
             }
 
-            // Serialize JSON with camelCase
+            // Serialize and send (add header in HTTP client)
             var jsonSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -483,6 +567,8 @@ namespace ADCS.CertMod
                     {
                         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
                     }
+                    // Add ServerGUID header (new addition)
+                    client.DefaultRequestHeaders.Add("X-ADCS-Server-GUID", serverGuid);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
                     var response = client.PostAsync(_apiUrl, content).Result;
                     if (response.IsSuccessStatusCode)

@@ -7,31 +7,30 @@ namespace AdcsCertificateApi
 {
     public class CertificateDataDto
     {
-        [JsonPropertyName("Data")]
+        [JsonPropertyName("data")]
         [Required(ErrorMessage = "Data is verplicht")]
         public CertificateLogDto Data { get; set; }
 
-        [JsonPropertyName("SANS")]
+        [JsonPropertyName("sans")]
         public List<CertificateSanDto> SANS { get; set; } = new List<CertificateSanDto>();
 
-        [JsonPropertyName("SubjectAttributes")]
+        [JsonPropertyName("subjectAttributes")]
         [Required(ErrorMessage = "SubjectAttributes is verplicht")]
         public List<SubjectAttributeDto> SubjectAttributes { get; set; } = new List<SubjectAttributeDto>();
     }
 
     public class CertificateLogDto
     {
-        [Required(ErrorMessage = "CAID is verplicht")]
-        [StringLength(50, ErrorMessage = "CAID mag niet langer zijn dan 50 karakters")]
-        public string CAID { get; set; }
+        [Required(ErrorMessage = "AdcsServerName is verplicht")]
+        [StringLength(50, ErrorMessage = "AdcsServerName mag niet langer zijn dan 50 karakters")]
+        public string AdcsServerName { get; set; }
 
         [Required(ErrorMessage = "IssuerName is verplicht")]
         [StringLength(512, ErrorMessage = "IssuerName mag niet langer zijn dan 512 karakters")]
         public string IssuerName { get; set; }
 
-        [Required(ErrorMessage = "AdcsServerAccount is verplicht")]
         [StringLength(50, ErrorMessage = "AdcsServerAccount mag niet langer zijn dan 50 karakters")]
-        public string AdcsServerAccount { get; set; } // New field
+        public string? AdcsServerAccount { get; set; } // Optioneel gemaakt
 
         [Required(ErrorMessage = "SerialNumber is verplicht")]
         [StringLength(128, ErrorMessage = "SerialNumber mag niet langer zijn dan 128 karakters")]
@@ -48,11 +47,8 @@ namespace AdcsCertificateApi
         public DateTime SubmittedWhen { get; set; }
 
         public DateTime? ResolvedWhen { get; set; }
-
         public DateTime? RevokedWhen { get; set; }
-
         public DateTime? RevokedEffectiveWhen { get; set; }
-
         public long? RevokedReason { get; set; }
 
         [StringLength(512, ErrorMessage = "RequesterName mag niet langer zijn dan 512 karakters")]
@@ -117,7 +113,7 @@ namespace AdcsCertificateApi
         [StringLength(50, ErrorMessage = "SANSType mag niet langer zijn dan 50 karakters")]
         public string SANSType { get; set; }
 
-        public string OID { get; set; }
+        public string? OID { get; set; }
 
         [Required(ErrorMessage = "Value is verplicht")]
         [StringLength(255, ErrorMessage = "SANSValue mag niet langer zijn dan 255 karakters")]
@@ -133,5 +129,29 @@ namespace AdcsCertificateApi
         [Required(ErrorMessage = "AttributeValue is verplicht")]
         [StringLength(1024, ErrorMessage = "AttributeValue mag niet langer zijn dan 1024 karakters")]
         public string AttributeValue { get; set; }
+    }
+
+    public class AuthorizedServerDto
+    {
+        [Required]
+        public string AdcsServerAccount { get; set; }
+        [Required]
+        public string AdcsServerName { get; set; }
+        [Required]
+        [RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", ErrorMessage = "Invalid GUID format for ServerGUID.")]
+        public string ServerGUID { get; set; }
+        public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class AuthorizedServerResponseDto
+    {
+        public long ServerID { get; set; }
+        public string AdcsServerAccount { get; set; }
+        public string AdcsServerName { get; set; }
+        public string ServerGUID { get; set; }
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
     }
 }

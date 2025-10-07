@@ -32,7 +32,7 @@ $script:JsonBase = [PSCustomObject]@{
     Data = [PSCustomObject]@{
         IssuerName = "CN=TestCA, O=minjenv, C=NL"
         SerialNumber = "test123"
-        CAID = "S98470A47A5A002"
+        AdcsServerName = "S98470A47A5A002"
         Request_RequestID = 10000
         Disposition = 20
         SubmittedWhen = "2025-08-31T01:45:56Z"
@@ -318,7 +318,7 @@ function Initialize-Database {
 
         # Add test data if not exists
         $testDataQueries = @(
-            "IF NOT EXISTS (SELECT 1 FROM CAs WHERE CAID = 'S98470A47A5A002') INSERT INTO CAs (CAID, IssuerName) VALUES ('S98470A47A5A002', 'CN=TestCA, O=minjenv, C=NL');",
+            "IF NOT EXISTS (SELECT 1 FROM CAs WHERE AdcsServerName = 'S98470A47A5A002') INSERT INTO CAs (AdcsServerName, IssuerName) VALUES ('S98470A47A5A002', 'CN=TestCA, O=minjenv, C=NL');",
             "IF NOT EXISTS (SELECT 1 FROM CertificateTemplates WHERE TemplateOID = '1.3.6.1.4.1.311.21.7') INSERT INTO CertificateTemplates (TemplateName, TemplateOID) VALUES ('TestTemplate', '1.3.6.1.4.1.311.21.7');",
             "IF NOT EXISTS (SELECT 1 FROM AuthorizedServers WHERE RequesterName = 'FRS98470\S98470A47A8A001$') INSERT INTO AuthorizedServers (RequesterName, IsActive) VALUES ('FRS98470\S98470A47A8A001$', 1);"
         )
@@ -649,7 +649,7 @@ function Test-ExpiringCertificatesEndpoint {
         $command = New-Object System.Data.SqlClient.SqlCommand
         $command.Connection = $connection
         $command.CommandText = @"
-INSERT INTO CertificateLogs (CAID, SerialNumber, Request_RequestID, Disposition, SubmittedWhen, NotBefore, NotAfter, TemplateID, Thumbprint, SignerPolicies, KeyRecoveryHashes, DispositionMessage, SignerApplicationPolicies, RequesterName, CallerName)
+INSERT INTO CertificateLogs (AdcsServerName, SerialNumber, Request_RequestID, Disposition, SubmittedWhen, NotBefore, NotAfter, TemplateID, Thumbprint, SignerPolicies, KeyRecoveryHashes, DispositionMessage, SignerApplicationPolicies, RequesterName, CallerName)
 VALUES ('S98470A47A5A002', @serial, @requestId, 20, GETDATE(), GETDATE(), DATEADD(day, 29, GETDATE()), 1, 'cfc661fb4dcee1433450b1236679228d78a0601d', 'DefaultPolicy', 'NoRecovery', 'Certificate issued', 'AppPolicy1', 'FRS98470\S98470A47A8A001$', 'TestCaller');
 "@
         [void]$command.Parameters.AddWithValue("@serial", $serialNumber)
@@ -794,7 +794,7 @@ $script:JsonBase = [PSCustomObject]@{
     Data = [PSCustomObject]@{
         IssuerName = "CN=TestCA, O=minjenv, C=NL"
         SerialNumber = "test123"
-        CAID = "S98470A47A5A002"
+        AdcsServerName = "S98470A47A5A002"
         Request_RequestID = 10000
         Disposition = 20
         SubmittedWhen = "2025-08-31T01:45:56Z"
@@ -1080,7 +1080,7 @@ function Initialize-Database {
 
         # Add test data if not exists
         $testDataQueries = @(
-            "IF NOT EXISTS (SELECT 1 FROM CAs WHERE CAID = 'S98470A47A5A002') INSERT INTO CAs (CAID, IssuerName) VALUES ('S98470A47A5A002', 'CN=TestCA, O=minjenv, C=NL');",
+            "IF NOT EXISTS (SELECT 1 FROM CAs WHERE AdcsServerName = 'S98470A47A5A002') INSERT INTO CAs (AdcsServerName, IssuerName) VALUES ('S98470A47A5A002', 'CN=TestCA, O=minjenv, C=NL');",
             "IF NOT EXISTS (SELECT 1 FROM CertificateTemplates WHERE TemplateOID = '1.3.6.1.4.1.311.21.7') INSERT INTO CertificateTemplates (TemplateName, TemplateOID) VALUES ('TestTemplate', '1.3.6.1.4.1.311.21.7');",
             "IF NOT EXISTS (SELECT 1 FROM AuthorizedServers WHERE RequesterName = 'FRS98470\S98470A47A8A001$') INSERT INTO AuthorizedServers (RequesterName, IsActive) VALUES ('FRS98470\S98470A47A8A001$', 1);"
         )
@@ -1411,7 +1411,7 @@ function Test-ExpiringCertificatesEndpoint {
         $command = New-Object System.Data.SqlClient.SqlCommand
         $command.Connection = $connection
         $command.CommandText = @"
-INSERT INTO CertificateLogs (CAID, SerialNumber, Request_RequestID, Disposition, SubmittedWhen, NotBefore, NotAfter, TemplateID, Thumbprint, SignerPolicies, KeyRecoveryHashes, DispositionMessage, SignerApplicationPolicies, RequesterName, CallerName)
+INSERT INTO CertificateLogs (AdcsServerName, SerialNumber, Request_RequestID, Disposition, SubmittedWhen, NotBefore, NotAfter, TemplateID, Thumbprint, SignerPolicies, KeyRecoveryHashes, DispositionMessage, SignerApplicationPolicies, RequesterName, CallerName)
 VALUES ('S98470A47A5A002', @serial, @requestId, 20, GETDATE(), GETDATE(), DATEADD(day, 29, GETDATE()), 2, 'cfc661fb4dcee1433450b1236679228d78a0601d', 'DefaultPolicy', 'NoRecovery', 'Certificate issued', 'AppPolicy1', 'FRS98470\S98470A47A8A001$', 'TestCaller');
 "@
         [void]$command.Parameters.AddWithValue("@serial", $serialNumber)

@@ -48,7 +48,7 @@ END
 BEGIN TRY
     -- Create table for CA information
     EXEC('CREATE TABLE [' + @DatabaseName + '].dbo.CAs (
-        CAID VARCHAR(50) PRIMARY KEY,
+        AdcsServerName VARCHAR(50) PRIMARY KEY,
         IssuerName NVARCHAR(512) NOT NULL,
         Description NVARCHAR(200) NULL,
         CONSTRAINT UQ_IssuerName UNIQUE (IssuerName)
@@ -79,7 +79,7 @@ BEGIN TRY
     -- Create table for certificate logs
     EXEC('CREATE TABLE [' + @DatabaseName + '].dbo.CertificateLogs (
         CertificateID BIGINT IDENTITY(1,1) PRIMARY KEY,
-        CAID VARCHAR(50) NOT NULL,
+        AdcsServerName VARCHAR(50) NOT NULL,
         SerialNumber VARCHAR(128) NOT NULL,
         Request_RequestID BIGINT NOT NULL,
         Disposition BIGINT NOT NULL DEFAULT 9,
@@ -109,14 +109,13 @@ BEGIN TRY
         PublishExpiredCertInCRL BIGINT NULL,
         PublicKeyLength VARCHAR(50) NULL,
         PublicKeyAlgorithm NVARCHAR(254) NULL,
-        CONSTRAINT FK_CertificateLogs_CAs FOREIGN KEY (CAID) REFERENCES [' + @DatabaseName + '].dbo.CAs (CAID),
+        CONSTRAINT FK_CertificateLogs_CAs FOREIGN KEY (AdcsServerName) REFERENCES [' + @DatabaseName + '].dbo.CAs (AdcsServerName),
         CONSTRAINT FK_CertificateLogs_Templates FOREIGN KEY (TemplateID) REFERENCES [' + @DatabaseName + '].dbo.CertificateTemplates (TemplateID),
-        CONSTRAINT FK_CertificateLogs_Requester FOREIGN KEY (RequesterName) REFERENCES [' + @DatabaseName + '].dbo.AuthorizedServers (RequesterName),
-        CONSTRAINT UQ_SerialNumber_CAID UNIQUE (SerialNumber, CAID),
-        CONSTRAINT UQ_RequestID_CAID UNIQUE (Request_RequestID, CAID),
+        CONSTRAINT UQ_SerialNumber_AdcsServerName UNIQUE (SerialNumber, AdcsServerName),
+        CONSTRAINT UQ_RequestID_AdcsServerName UNIQUE (Request_RequestID, AdcsServerName),
         CONSTRAINT CK_Disposition CHECK (Disposition IN (8, 9, 12, 15, 16, 17, 20, 21, 30, 31))
     );
-    CREATE INDEX IDX_CAID ON [' + @DatabaseName + '].dbo.CertificateLogs (CAID);
+    CREATE INDEX IDX_AdcsServerName ON [' + @DatabaseName + '].dbo.CertificateLogs (AdcsServerName);
     CREATE INDEX IDX_NotAfter ON [' + @DatabaseName + '].dbo.CertificateLogs (NotAfter);
     CREATE INDEX IDX_SubmittedWhen ON [' + @DatabaseName + '].dbo.CertificateLogs (SubmittedWhen);
     CREATE INDEX IDX_TemplateID ON [' + @DatabaseName + '].dbo.CertificateLogs (TemplateID);

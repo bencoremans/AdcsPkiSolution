@@ -18,7 +18,7 @@ namespace AdcsCertificateApi
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok("Test endpoint werkt");
+            return Ok("Test endpoint works");
         }
 
         [HttpPost("validate")]
@@ -29,13 +29,13 @@ namespace AdcsCertificateApi
                 var errors = ModelState
                     .SelectMany(x => x.Value.Errors.Select(e => new { Field = x.Key, Error = e.ErrorMessage }))
                     .ToList();
-                var errorMessages = errors.Select(e => $"Veld: {e.Field}, Fout: {e.Error}");
-                logger.LogError("Modelvalidatiefouten voor POST /api/Test/validate: {Errors}", string.Join("; ", errorMessages));
+                var errorMessages = errors.Select(e => $"Field: {e.Field}, Error: {e.Error}");
+                logger.LogError("Model validation errors for POST /api/Test/validate: {Errors}", string.Join("; ", errorMessages));
                 return BadRequest(new { Errors = errors.Select(e => new { e.Field, e.Error }) });
             }
 
-            logger.LogInformation("JSON-body validatie geslaagd");
-            return Ok("JSON-body is geldig");
+            logger.LogInformation("JSON body validation successful");
+            return Ok("JSON body is valid");
         }
     }
 }
