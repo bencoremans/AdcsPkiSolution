@@ -17,6 +17,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
     <PackageReference Include="SysadminsLV.PKI" Version="4.3.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.9" />
     <PackageReference Include="System.Text.Json" Version="9.0.8" />
     <None Update="Database\SQL-PKI-DB.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -24,5 +25,11 @@
     <None Update="Scripts\Test-api-AdcsCertificateApiV2.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+	<None Update="Scripts\Add-AdcsAuthorizedServer.ps1">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="logs\" />
   </ItemGroup>
 </Project>
