@@ -9,13 +9,12 @@ using Serilog;
 
 namespace AdcsCertificateApi.Controllers
 {
-    [Authorize(Policy = "KerberosOnly")] // Requires SPN for the app pool gMSA account and membership in FRS98470\grp98470c47-sys-l-A47-ManangeAPI
+    [Authorize(Policy = "KerberosOnly")]
     [Route("api/[controller]")]
     [ApiController]
     public class ManageController : ControllerBase
     {
         private readonly AuthDbContext dbContext;
-
         public ManageController(AuthDbContext dbContext)
         {
             this.dbContext = dbContext;
@@ -49,20 +48,23 @@ namespace AdcsCertificateApi.Controllers
         public async Task<ActionResult<AuthorizedServerResponseDto>> CreateAuthorizedServer([FromBody] AuthorizedServerDto server)
         {
             Log.Information("Creating AuthorizedServer: AdcsServerAccount={AdcsServerAccount}, ServerGUID={ServerGUID}", server.AdcsServerAccount, server.ServerGUID);
-
             if (!Guid.TryParse(server.ServerGUID, out _))
             {
                 Log.Error("Invalid ServerGUID format: {ServerGUID}", server.ServerGUID);
                 return BadRequest("Invalid ServerGUID format. Must be a valid GUID.");
             }
-
-            // Check unique constraint
-            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerAccount == server.AdcsServerAccount && s.ServerGUID == server.ServerGUID))
+            // Check unique constraint for AdcsServerAccount
+            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerAccount == server.AdcsServerAccount))
             {
-                Log.Warning("Combination of AdcsServerAccount {AdcsServerAccount} and ServerGUID {ServerGUID} already exists", server.AdcsServerAccount, server.ServerGUID);
-                return Conflict("Combination of AdcsServerAccount and ServerGUID already exists.");
+                Log.Warning("AdcsServerAccount {AdcsServerAccount} already exists", server.AdcsServerAccount);
+                return Conflict("AdcsServerAccount already exists.");
             }
-
+            // Check unique constraint for AdcsServerName
+            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerName == server.AdcsServerName))
+            {
+                Log.Warning("AdcsServerName {AdcsServerName} already exists", server.AdcsServerName);
+                return Conflict("AdcsServerName already exists.");
+            }
             var newServer = new AuthorizedServer
             {
                 AdcsServerAccount = server.AdcsServerAccount,
@@ -72,10 +74,22 @@ namespace AdcsCertificateApi.Controllers
                 IsActive = server.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
-
             dbContext.AuthorizedServers.Add(newServer);
-            await dbContext.SaveChangesAsync();
-
+            try
+            {
+                await dbContext.SaveChangesAsync();
+                Log.Information("Successfully created AuthorizedServer with ID: {ServerID}", newServer.ServerID);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 2627)
+            {
+                Log.Error("Unique key violation for AdcsServerAccount {AdcsServerAccount} or AdcsServerName {AdcsServerName}: {Error}", server.AdcsServerAccount, server.AdcsServerName, ex);
+                return Conflict("AdcsServerAccount or AdcsServerName already exists.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error creating AuthorizedServer: {Error}", ex);
+                return StatusCode(500, $"Error creating AuthorizedServer: {ex.Message}");
+            }
             var response = new AuthorizedServerResponseDto
             {
                 ServerID = newServer.ServerID,
@@ -86,37 +100,51 @@ namespace AdcsCertificateApi.Controllers
                 IsActive = newServer.IsActive,
                 CreatedAt = newServer.CreatedAt
             };
-
-            Log.Information("Successfully created AuthorizedServer with ID: {ServerID}", newServer.ServerID);
             return CreatedAtAction(nameof(GetAuthorizedServer), new { id = newServer.ServerID }, response);
         }
 
         // PUT /api/Manage/AuthorizedServers/{id}
         [HttpPut("AuthorizedServers/{id}")]
-        public async Task<IActionResult> UpdateAuthorizedServer(long id, AuthorizedServer server)
+        public async Task<IActionResult> UpdateAuthorizedServer(long id, AuthorizedServerDto server)
         {
             Log.Information("Updating AuthorizedServer with ID: {ServerID}", id);
-
-            if (id != server.ServerID)
-            {
-                Log.Error("Mismatched ServerID: {ServerID} does not match request ID: {RequestID}", server.ServerID, id);
-                return BadRequest();
-            }
-
             if (!Guid.TryParse(server.ServerGUID, out _))
             {
                 Log.Error("Invalid ServerGUID format: {ServerGUID}", server.ServerGUID);
                 return BadRequest("Invalid ServerGUID format. Must be a valid GUID.");
             }
-
-            // Check unique constraint (exclude current)
-            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerAccount == server.AdcsServerAccount && s.ServerGUID == server.ServerGUID && s.ServerID != id))
+            // Check unique constraint for AdcsServerAccount (exclude current)
+            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerAccount == server.AdcsServerAccount && s.ServerID != id))
             {
-                Log.Warning("Combination of AdcsServerAccount {AdcsServerAccount} and ServerGUID {ServerGUID} already exists", server.AdcsServerAccount, server.ServerGUID);
-                return Conflict("Combination of AdcsServerAccount and ServerGUID already exists.");
+                Log.Warning("AdcsServerAccount {AdcsServerAccount} already exists for another server", server.AdcsServerAccount);
+                return Conflict("AdcsServerAccount already exists.");
             }
-
-            dbContext.Entry(server).State = EntityState.Modified;
+            // Check unique constraint for AdcsServerName (exclude current)
+            if (await dbContext.AuthorizedServers.AnyAsync(s => s.AdcsServerName == server.AdcsServerName && s.ServerID != id))
+            {
+                Log.Warning("AdcsServerName {AdcsServerName} already exists for another server", server.AdcsServerName);
+                return Conflict("AdcsServerName already exists.");
+            }
+            // Fetch existing server to preserve CreatedAt
+            var existingServer = await dbContext.AuthorizedServers.FindAsync(id);
+            if (existingServer == null)
+            {
+                Log.Warning("AuthorizedServer not found for ID: {ServerID}", id);
+                return NotFound();
+            }
+            // Update fields, preserving CreatedAt
+            existingServer.AdcsServerAccount = server.AdcsServerAccount;
+            existingServer.AdcsServerName = server.AdcsServerName;
+            existingServer.ServerGUID = server.ServerGUID;
+            existingServer.Description = server.Description;
+            existingServer.IsActive = server.IsActive;
+            // Expliciet aangeven welke eigenschappen gewijzigd zijn
+            dbContext.Entry(existingServer).Property(x => x.AdcsServerAccount).IsModified = true;
+            dbContext.Entry(existingServer).Property(x => x.AdcsServerName).IsModified = true;
+            dbContext.Entry(existingServer).Property(x => x.ServerGUID).IsModified = true;
+            dbContext.Entry(existingServer).Property(x => x.Description).IsModified = true;
+            dbContext.Entry(existingServer).Property(x => x.IsActive).IsModified = true;
+            // CreatedAt wordt expliciet niet gemarkeerd als gewijzigd
             try
             {
                 await dbContext.SaveChangesAsync();
@@ -131,11 +159,60 @@ namespace AdcsCertificateApi.Controllers
                 }
                 throw;
             }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 2627)
+            {
+                Log.Error("Unique key violation for AdcsServerAccount {AdcsServerAccount} or AdcsServerName {AdcsServerName}: {Error}", server.AdcsServerAccount, server.AdcsServerName, ex);
+                return Conflict("AdcsServerAccount or AdcsServerName already exists.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error updating AuthorizedServer with ID: {ServerID}: {Error}", id, ex);
+                return StatusCode(500, $"Error updating AuthorizedServer: {ex.Message}");
+            }
+            return NoContent();
+        }
+        // PUT /api/Manage/AuthorizedServers/{id}/active
+        [HttpPut("AuthorizedServers/{id}/active")]
+        public async Task<IActionResult> UpdateAuthorizedServerActive(long id, [FromBody] bool isActive)
+        {
+            Log.Information("Updating IsActive for AuthorizedServer with ID: {ServerID} to {IsActive}", id, isActive);
+
+            // Fetch existing server
+            var existingServer = await dbContext.AuthorizedServers.FindAsync(id);
+            if (existingServer == null)
+            {
+                Log.Warning("AuthorizedServer not found for ID: {ServerID}", id);
+                return NotFound();
+            }
+
+            // Update only IsActive
+            existingServer.IsActive = isActive;
+            dbContext.Entry(existingServer).Property(x => x.IsActive).IsModified = true;
+
+            try
+            {
+                await dbContext.SaveChangesAsync();
+                Log.Information("Successfully updated IsActive for AuthorizedServer with ID: {ServerID}", id);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await AuthorizedServerExists(id))
+                {
+                    Log.Warning("AuthorizedServer not found for ID: {ServerID}", id);
+                    return NotFound();
+                }
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error updating IsActive for AuthorizedServer with ID: {ServerID}: {Error}", id, ex);
+                return StatusCode(500, $"Error updating IsActive for AuthorizedServer: {ex.Message}");
+            }
 
             return NoContent();
         }
 
-        // DELETE /api/Manage/AuthorizedServers/{id} (soft delete: set IsActive = false)
+        // DELETE /api/Manage/AuthorizedServers/{id}
         [HttpDelete("AuthorizedServers/{id}")]
         public async Task<IActionResult> DeleteAuthorizedServer(long id)
         {
@@ -146,7 +223,6 @@ namespace AdcsCertificateApi.Controllers
                 Log.Warning("AuthorizedServer not found for ID: {ServerID}", id);
                 return NotFound();
             }
-
             server.IsActive = false; // Soft delete
             await dbContext.SaveChangesAsync();
             Log.Information("Successfully soft deleted AuthorizedServer with ID: {ServerID}", id);

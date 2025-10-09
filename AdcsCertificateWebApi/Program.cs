@@ -10,10 +10,11 @@ using Serilog.Events;
 using System;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configureer Serilog met extra logging voor authenticatie
+// Configure Serilog with additional logging for authentication
 builder.Host.UseSerilog((context, configuration) =>
 {
     configuration
@@ -35,6 +36,7 @@ builder.Host.UseSerilog((context, configuration) =>
             outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}");
 });
 
+// Configure Data Protection to persist keys to the file system
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("AuthDb"),
@@ -44,9 +46,15 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
             errorNumbersToAdd: null
         )
     )
-    .EnableSensitiveDataLogging() // Temp: Logs connection details; remove in prod
-    .EnableDetailedErrors() // More exception info
+    // Alleen inschakelen in development
+    .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+    .EnableDetailedErrors(builder.Environment.IsDevelopment())
 );
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\DataProtectionKeys"))
+    .ProtectKeysWithDpapi()  // Dit configureert de XML encryptor met DPAPI
+    .SetApplicationName("AdcsCertificateApi");
 
 // Add authentication with Negotiate for Kerberos
 builder.Services.AddAuthentication(options =>

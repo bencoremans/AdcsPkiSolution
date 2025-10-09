@@ -4,37 +4,37 @@ namespace AdcsCertificateApi
 {
     public class CertificateLog
     {
-        public long CertificateID { get; set; }  // NOT NULL, PK
-        public string AdcsServerName { get; set; }  // NOT NULL
-        public string SerialNumber { get; set; }  // NOT NULL
-        public long Request_RequestID { get; set; }  // NOT NULL
-        public long Disposition { get; set; }  // NOT NULL
-        public DateTime SubmittedWhen { get; set; }  // NOT NULL
-        public DateTime? ResolvedWhen { get; set; }  // NULL
-        public DateTime? RevokedWhen { get; set; }  // NULL
-        public DateTime? RevokedEffectiveWhen { get; set; }  // NULL
-        public long? RevokedReason { get; set; }  // NULL
-        public string? RequesterName { get; set; }  // NULL
-        public string? CallerName { get; set; }  // NULL
-        public DateTime NotBefore { get; set; }  // NOT NULL
-        public DateTime NotAfter { get; set; }  // NOT NULL
-        public string? SubjectKeyIdentifier { get; set; }  // NULL
-        public string Thumbprint { get; set; }  // NOT NULL
-        public long TemplateID { get; set; }  // NOT NULL
-        public long? RequestType { get; set; }  // NULL
-        public long? RequestFlags { get; set; }  // NULL
-        public long? StatusCode { get; set; }  // NULL
-        public string? DispositionMessage { get; set; }  // NOT NULL in DB, temporarily nullable
-        public string? SignerPolicies { get; set; }  // NOT NULL in DB, temporarily nullable
-        public string? SignerApplicationPolicies { get; set; }  // NOT NULL in DB, temporarily nullable
-        public long? Officer { get; set; }  // NULL
-        public string? KeyRecoveryHashes { get; set; }  // NOT NULL in DB, temporarily nullable
-        public long? EnrollmentFlags { get; set; }  // NULL
-        public long? GeneralFlags { get; set; }  // NULL
-        public long? PrivateKeyFlags { get; set; }  // NULL
-        public long? PublishExpiredCertInCRL { get; set; }  // NULL
-        public string? PublicKeyLength { get; set; }  // NULL
-        public string? PublicKeyAlgorithm { get; set; }  // NULL
+        public long CertificateID { get; set; } // NOT NULL, PK
+        public string AdcsServerName { get; set; } // NOT NULL
+        public string SerialNumber { get; set; } // NOT NULL
+        public long Request_RequestID { get; set; } // NOT NULL
+        public long Disposition { get; set; } // NOT NULL
+        public DateTime SubmittedWhen { get; set; } // NOT NULL
+        public DateTime? ResolvedWhen { get; set; } // NULL
+        public DateTime? RevokedWhen { get; set; } // NULL
+        public DateTime? RevokedEffectiveWhen { get; set; } // NULL
+        public long? RevokedReason { get; set; } // NULL
+        public string? RequesterName { get; set; } // NULL
+        public string? CallerName { get; set; } // NULL
+        public DateTime NotBefore { get; set; } // NOT NULL
+        public DateTime NotAfter { get; set; } // NOT NULL
+        public string? SubjectKeyIdentifier { get; set; } // NULL
+        public string Thumbprint { get; set; } // NOT NULL
+        public long TemplateID { get; set; } // NOT NULL
+        public long? RequestType { get; set; } // NULL
+        public long? RequestFlags { get; set; } // NULL
+        public long? StatusCode { get; set; } // NULL
+        public string? DispositionMessage { get; set; } // NOT NULL in DB, temporarily nullable
+        public string? SignerPolicies { get; set; } // NOT NULL in DB, temporarily nullable
+        public string? SignerApplicationPolicies { get; set; } // NOT NULL in DB, temporarily nullable
+        public long? Officer { get; set; } // NULL
+        public string? KeyRecoveryHashes { get; set; } // NOT NULL in DB, temporarily nullable
+        public long? EnrollmentFlags { get; set; } // NULL
+        public long? GeneralFlags { get; set; } // NULL
+        public long? PrivateKeyFlags { get; set; } // NULL
+        public long? PublishExpiredCertInCRL { get; set; } // NULL
+        public string? PublicKeyLength { get; set; } // NULL
+        public string? PublicKeyAlgorithm { get; set; } // NULL
     }
 
     public class CertificateSan
@@ -71,9 +71,9 @@ namespace AdcsCertificateApi
     public class AuthorizedServer
     {
         public long ServerID { get; set; }
-        public string AdcsServerAccount { get; set; } 
+        public string AdcsServerAccount { get; set; }
         public string AdcsServerName { get; set; }
-        public string ServerGUID { get; set; }  // New field, NOT NULL
+        public string ServerGUID { get; set; } // NOT NULL
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; }
@@ -96,24 +96,23 @@ namespace AdcsCertificateApi
         {
             modelBuilder.Entity<AuthorizedServer>()
                 .HasKey(a => a.ServerID);
-
-            // Optioneel: Configureer andere constraints
+            // Configure unique index for AdcsServerAccount (UQ_RequesterName)
+            modelBuilder.Entity<AuthorizedServer>()
+                .HasIndex(a => a.AdcsServerAccount)
+                .IsUnique()
+                .HasDatabaseName("UQ_RequesterName");
+            // Configure unique index for AdcsServerName
             modelBuilder.Entity<AuthorizedServer>()
                 .HasIndex(a => a.AdcsServerName)
                 .IsUnique();
-
             modelBuilder.Entity<CertificateLog>()
                 .HasKey(c => c.CertificateID);
-
             modelBuilder.Entity<CA>()
                 .HasKey(c => c.AdcsServerName);
-
             modelBuilder.Entity<CertificateTemplate>()
                 .HasKey(t => t.TemplateID);
-
             modelBuilder.Entity<SubjectAttribute>()
                 .HasKey(s => s.AttributeID);
-
             modelBuilder.Entity<CertificateSan>()
                 .HasKey(s => s.SANSID);
         }

@@ -22,14 +22,21 @@
     <None Update="Database\SQL-PKI-DB.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Scripts\Test-AdcsAdminsMembership.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Scripts\Test-api-AdcsCertificateApiV2.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 	<None Update="Scripts\Add-AdcsAuthorizedServer.ps1">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	</None>
+	<None Update="Scripts\Test-ManageControllerEndpoints.ps1">
+	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="docs\" />
   </ItemGroup>
 </Project>
